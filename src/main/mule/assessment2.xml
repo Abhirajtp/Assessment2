@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="9b7ab29c-250f-4a58-9c64-8f9149f5ab61" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="8c27894d-a0c7-4d7f-93df-4815b77d174d">
+		<http:request-connection port="443" host="api.meteostat.net" protocol="HTTPS"/>
+	</http:request-config>
+	<flow name="assessment2Flow" doc:id="1744b011-c8f5-4430-952d-a7c4b22395a3" >
+		<http:listener doc:name="Listener" doc:id="2c2cdec4-26d1-4473-90f0-a9a2e32f2743" config-ref="HTTP_Listener_config" path="/maxweather"/>
+		<http:request method="GET" doc:name="Request" doc:id="eabf6e20-e289-4874-af14-9a0e0321c8c7" config-ref="HTTP_Request_configuration" path="/v1/history/daily?station=10637&amp;start=2017-01-01&amp;end=2017-01-31&amp;key=lR0cZrnk">
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="1c502b88-59f0-4cf9-9d7f-9bcc917bb411" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var x= payload.data map $.temperature_max
+---
+max(x)
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="flow2_assessment2Flow" doc:id="107e41db-21ef-4c7b-b460-c98e731d9b19" >
+		<http:listener doc:name="Listener" doc:id="47d1f331-b57b-4263-b711-ba0112614a9f" config-ref="HTTP_Listener_config" path="/avgweather" />
+		<http:request method="GET" doc:name="Request" doc:id="fb76c1fe-111c-4e23-9fe1-51a2867f5657" config-ref="HTTP_Request_configuration" path="/v1/history/daily?station=10637&amp;start=2017-01-01&amp;end=2017-01-31&amp;key=lR0cZrnk" />
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="8689302e-e2e0-4422-a6ad-a06ede766a87">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var x= payload.data map $.precipitation
+---
+avg(x)
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
